@@ -1,10 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chat_online/chat_screen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
   runApp(MyApp());
-
-  Firestore.instance.collection("col").document("doc").setData({"texto": "davi"});
 }
 
 class MyApp extends StatelessWidget {
@@ -13,9 +11,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: "Chat Online",
       theme: ThemeData(
-        primaryColor: Colors.black
+        primaryColor: Colors.green,
+        iconTheme: IconThemeData(color: Colors.lightBlue)
       ),
-      home: Container(),
+      home: ChatScreen(),
     );
   }
 }
