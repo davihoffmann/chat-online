@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:chat_online/chat_message.dart';
 import 'package:chat_online/text_compose.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -91,9 +92,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           itemBuilder: (context, index) {
                             var document = documents[index];
 
-                            return ListTile(
-                              title: Text('${document.data['text']}'),
-                            );
+                            return ChatMessage(document.data, true);
                           },
                         );
                     }
