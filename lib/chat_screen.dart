@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:chat_online/text_compose.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class ChatScreen extends StatefulWidget {
   @override
@@ -11,9 +13,58 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
+  final GoogleSignIn googleSignIn = GoogleSignIn();
+
+  FirebaseUser _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+
+    FirebaseAuth.instance.onAuthStateChanged.listen((user) {
+      _currentUser = user;
+    });
+  }
+
+  Future<FirebaseUser> _getUser() async {
+    if (_currentUser != null) {
+      return _currentUser;
+    }
+
+    try {
+      //Codigo para pegar conta auneticada do Google
+      final GoogleSignInAccount googleSignInAccount =
+          await googleSignIn.signIn();
+
+      //Pega os IdToken e Token para autenticar o usuario do google no Firebase
+      final GoogleSignInAuthentication googleSignInAuthentication =
+          await googleSignInAccount.authentication;
+
+      //Cria a credencial para autenticar o usuario no Firebase
+      final AuthCredential credential = GoogleAuthProvider.getCredential(
+          idToken: googleSignInAuthentication.idToken,
+          accessToken: googleSignInAuthentication.accessToken);
+
+      // Auntentica usuario no firebase
+      final AuthResult authResult =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Recupera usuario do firebase
+      final FirebaseUser user = authResult.user;
+
+      return user;
+    } catch (error) {
+      print(error);
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text("Olá"),
         elevation: 0,
@@ -54,7 +105,20 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   _sendMessage({String text, File file}) async {
-    Map<String, dynamic> data = {};
+    final FirebaseUser user = await _getUser();
+
+    if (user == null) {
+      _scaffoldKey.currentState.showSnackBar(SnackBar(
+        content: Text("Não foi possível fazer o login, teve novamente."),
+        backgroundColor: Colors.red,
+      ));
+    }
+
+    Map<String, dynamic> data = {
+      "uid": user.uid,
+      "senderName": user.displayName,
+      "senderPhotoUrl": user.photoUrl,
+    };
 
     if (file != null) {
       StorageUploadTask task = FirebaseStorage.instance
