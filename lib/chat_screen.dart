@@ -20,7 +20,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   FirebaseUser _currentUser;
 
-  bool _isLoading = false;
+  bool _isLoadingImage = false;
 
   @override
   void initState() {
@@ -107,14 +107,17 @@ class _ChatScreenState extends State<ChatScreen> {
                       itemBuilder: (context, index) {
                         var document = documents[index];
 
-                        return ChatMessage(document.data, true);
+                        return ChatMessage(
+                          document.data,
+                          document.data['uid'] == _currentUser?.uid
+                        );
                       },
                     );
                 }
               },
             ),
           ),
-          _isLoading ? LinearProgressIndicator() : Container(),
+          _isLoadingImage ? LinearProgressIndicator() : Container(),
           TextCompose(_sendMessage),
         ],
       ),
@@ -145,7 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
           .putFile(file);
 
       setState(() {
-        _isLoading = true;
+        _isLoadingImage = true;
       });
 
       StorageTaskSnapshot taskSnapshot = await task.onComplete;
@@ -154,7 +157,7 @@ class _ChatScreenState extends State<ChatScreen> {
       data['imgUrl'] = url;
 
       setState(() {
-        _isLoading = false;
+        _isLoadingImage = false;
       });
     }
 
