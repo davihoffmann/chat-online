@@ -20,6 +20,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   FirebaseUser _currentUser;
 
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -83,30 +85,36 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: <Widget>[
           Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                  stream: Firestore.instance.collection('messages').orderBy('time').snapshots(),
-                  builder: (context, snapshot) {
-                    switch (snapshot.connectionState) {
-                      case ConnectionState.none:
-                      case ConnectionState.waiting:
-                        return Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      default:
-                        List<DocumentSnapshot> documents =
-                            snapshot.data.documents.reversed.toList();
+            child: StreamBuilder<QuerySnapshot>(
+              stream: Firestore.instance
+                  .collection('messages')
+                  .orderBy('time')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                switch (snapshot.connectionState) {
+                  case ConnectionState.none:
+                  case ConnectionState.waiting:
+                    return Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  default:
+                    List<DocumentSnapshot> documents =
+                        snapshot.data.documents.reversed.toList();
 
-                        return ListView.builder(
-                          itemCount: documents.length,
-                          reverse: true,
-                          itemBuilder: (context, index) {
-                            var document = documents[index];
+                    return ListView.builder(
+                      itemCount: documents.length,
+                      reverse: true,
+                      itemBuilder: (context, index) {
+                        var document = documents[index];
 
-                            return ChatMessage(document.data, true);
-                          },
-                        );
-                    }
-                  })),
+                        return ChatMessage(document.data, true);
+                      },
+                    );
+                }
+              },
+            ),
+          ),
+          _isLoading ? LinearProgressIndicator() : Container(),
           TextCompose(_sendMessage),
         ],
       ),
@@ -136,10 +144,18 @@ class _ChatScreenState extends State<ChatScreen> {
           .child(DateTime.now().millisecondsSinceEpoch.toString())
           .putFile(file);
 
+      setState(() {
+        _isLoading = true;
+      });
+
       StorageTaskSnapshot taskSnapshot = await task.onComplete;
       String url = await taskSnapshot.ref.getDownloadURL();
       print(url);
       data['imgUrl'] = url;
+
+      setState(() {
+        _isLoading = false;
+      });
     }
 
     if (text != null) {
@@ -152,9 +168,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _onClickLogout() {
     FirebaseAuth.instance.signOut();
     googleSignIn.signOut();
-    _scaffoldKey.currentState.showSnackBar(
-      SnackBar(content: Text("Você desconectou com sucesso!"))
-    );
+    _scaffoldKey.currentState
+        .showSnackBar(SnackBar(content: Text("Você desconectou com sucesso!")));
   }
-
 }
